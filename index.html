@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Дзен</title>
+
+        <link rel="preconnect" href="https://vk.com/video_ext.php" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no,viewport-fit=cover"
+        />
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+                width: 100vw;
+                height: 100vh;
+                background-color: rgb(41, 41, 43);
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            #player {
+                width: 100%;
+                height: 100%;
+            }
+            .dzen-iframe {
+                border: 0;
+                width: 100%;
+                height: 100%;
+            }
+            .error {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                width: 100%;
+                height: 100%;
+                color: white;
+                font-size: 24px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="player"></div>
+
+        <script>
+            const VK_EMBED_URL = 'https://vk.com/video_ext.php';
+            const ERROR_TEXT = 'Похоже, трансляция недоступна';
+
+            const RETRY_TIMEOUT = 20000;
+            const RETRIES_COUNT = 3;
+
+            const root = document.getElementById('player');
+            const searchString = window.location.search;
+
+            const showError = () => {
+                const errorScreen = document.createElement('div');
+                errorScreen.classList = 'error';
+                errorScreen.textContent = ERROR_TEXT;
+
+                root.replaceChildren(errorScreen);
+            };
+
+            const setFrameSrcWithRetry = (iframe, src, maxRetries = RETRIES_COUNT, initialDelayMs = RETRY_TIMEOUT) => {
+                let retriesLeft = maxRetries;
+                let loaded = false;
+                let timeoutId = undefined;
+                let delayMs = initialDelayMs;
+
+                const cancel = () => {
+                    retriesLeft = 0;
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                    }
+                };
+
+                const setRetry = () => {
+                    timeoutId = setTimeout(() => {
+                        if (!loaded && retriesLeft-- > 0) {
+                            iframe.src = src;
+                            setRetry();
+                            delayMs *= 1.5;
+                        } else {
+                            showError();
+                        }
+                    }, delayMs);
+                };
+
+                iframe.onload = () => {
+                    loaded = true;
+                    cancel();
+                };
+                iframe.src = src;
+                setRetry();
+
+                return cancel;
+            };
+
+            const iframe = document.createElement('iframe');
+            iframe.classList = 'dzen-iframe';
+            iframe.onerror = showError;
+
+            const htmlIframe = root.appendChild(iframe);
+            setFrameSrcWithRetry(htmlIframe, VK_EMBED_URL + searchString);
+        </script>
+
+        <noscript>
+            <div class="error">Похоже, трансляция недоступна</div>
+        </noscript>
+    </body>
+</html>
