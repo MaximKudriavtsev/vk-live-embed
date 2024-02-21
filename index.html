@@ -99,6 +99,7 @@
             const iframe = document.createElement('iframe');
             iframe.classList = 'dzen-iframe';
             iframe.onerror = showError;
+            iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture;';
 
             const htmlIframe = root.appendChild(iframe);
             setFrameSrcWithRetry(htmlIframe, VK_EMBED_URL + searchString);
